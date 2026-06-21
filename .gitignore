@@ -20,7 +20,7 @@ mono_crash.*.json
 *.import
 *.tmp
 export
-addons/webrtc
+project/addons/webrtc
 
 # Godot auto generated files
 *.gen.*

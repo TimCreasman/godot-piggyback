@@ -1,38 +1,38 @@
-[gd_scene load_steps=2 format=3 uid="uid://d0yexpwulxnyb"]
+[gd_scene format=3 uid="uid://d0yexpwulxnyb"]
 
-[ext_resource type="Script" path="res://examples/lobby/lobby.gd" id="1_vobbu"]
+[ext_resource type="Script" uid="uid://2gcuu3kbujf1" path="res://examples/lobby/lobby.gd" id="1_vobbu"]
 
-[node name="Lobby" type="Node2D"]
+[node name="Lobby" type="Node2D" unique_id=192771558]
 script = ExtResource("1_vobbu")
 
-[node name="room_label" type="Label" parent="."]
+[node name="room_label" type="Label" parent="." unique_id=585356821]
 offset_left = 234.0
 offset_top = 20.0
 offset_right = 307.0
 offset_bottom = 43.0
 text = "Room list"
 
-[node name="room_list" type="ItemList" parent="."]
+[node name="room_list" type="ItemList" parent="." unique_id=183380281]
 offset_left = 31.0
 offset_top = 55.0
 offset_right = 509.0
 offset_bottom = 663.0
 
-[node name="room_name_edit" type="TextEdit" parent="."]
+[node name="room_name_edit" type="TextEdit" parent="." unique_id=1432546055]
 offset_left = 32.0
 offset_top = 679.0
 offset_right = 430.0
 offset_bottom = 711.0
 placeholder_text = "Room name"
 
-[node name="room_create_btn" type="Button" parent="."]
+[node name="room_create_btn" type="Button" parent="." unique_id=601333384]
 offset_left = 436.0
 offset_top = 680.0
 offset_right = 507.0
 offset_bottom = 711.0
 text = "Create"
 
-[node name="room_join_btn" type="Button" parent="."]
+[node name="room_join_btn" type="Button" parent="." unique_id=1075170087]
 offset_left = 32.0
 offset_top = 721.0
 offset_right = 184.0
@@ -40,22 +40,22 @@ offset_bottom = 752.0
 disabled = true
 text = "Join selected room"
 
-[node name="current_room" type="Control" parent="."]
+[node name="current_room" type="Control" parent="." unique_id=2068878697]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 611.0
 offset_right = 1197.0
 offset_bottom = 798.0
 
-[node name="room_label" type="Label" parent="current_room"]
-layout_mode = 2
+[node name="room_label" type="Label" parent="current_room" unique_id=1241096393]
+layout_mode = 0
 offset_left = 250.0
 offset_top = 23.0
 offset_right = 356.0
 offset_bottom = 46.0
 text = "Current room"
 
-[node name="room_log" type="RichTextLabel" parent="current_room"]
+[node name="room_log" type="RichTextLabel" parent="current_room" unique_id=1925088578]
 layout_mode = 0
 offset_left = 25.0
 offset_top = 75.0
@@ -63,7 +63,7 @@ offset_right = 530.0
 offset_bottom = 707.0
 scroll_following = true
 
-[node name="room_leave_btn" type="Button" parent="current_room"]
+[node name="room_leave_btn" type="Button" parent="current_room" unique_id=1313715311]
 layout_mode = 0
 offset_left = 468.0
 offset_top = 722.0

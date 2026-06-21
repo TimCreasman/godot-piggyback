@@ -72,6 +72,7 @@ func send(data, mode=_options.mode) -> Error:
 		push_error("INVALID_DATA")
 		return Error.ERR_INVALID_DATA
 
+	print("sending data")
 	return _socket.send_text(data)
 
 func close(was_error=false) -> void:

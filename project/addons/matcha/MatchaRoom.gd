@@ -56,7 +56,12 @@ func _init(options:={}):
 	if not "pool_size" in options: options.pool_size = _pool_size
 	if not "offer_timeout" in options: options.offer_timeout = _offer_timeout
 	if not "identifier" in options: options.identifier = "com.matcha.default"
-	if not "tracker_urls" in options: options.tracker_urls = ["wss://tracker.openwebtorrent.com", "wss://tracker.files.fm:7073/announce"]
+	if not "tracker_urls" in options: options.tracker_urls = [
+		"wss://tracker.webtorrent.dev",
+		"wss://tracker.openwebtorrent.com",
+		"wss://tracker.btorrent.xyz",
+		"wss://tracker.files.fm:7073/announce"
+	]
 	if not "room_id" in options: options.room_id = options.identifier.sha1_text().substr(0, 20)
 	if not "type" in options: options.type = "mesh"
 	if not "autostart" in options: options.autostart = true
@@ -206,6 +211,7 @@ func _on_got_offer(offer: TrackerClient.Response, tracker_client: TrackerClient)
 	answer_peer.id = offer.peer_id
 
 	answer_peer.sdp_created.connect(self._send_answer_sdp.bind(answer_peer, tracker_client))
+	print("adding peer %s" % answer_peer.id)
 	add_peer(answer_peer, answer_rpc_id)
 
 	if answer_peer.start() != OK:

@@ -11,8 +11,8 @@ func _init():
 	_lobby.room_updated.connect(self._on_room_updated)
 	_lobby.room_closed.connect(self._on_room_closed)
 
-#func _ready():
-#	lobby.create_room({ "name": "Penis" })
+func _ready():
+	_lobby.create_room({ "name": "Test" })
 
 # Private methods
 
