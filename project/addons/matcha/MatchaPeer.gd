@@ -104,13 +104,14 @@ func set_answer(remote_sdp: String) -> Error:
 
 	_answered = true
 	_remote_sdp = remote_sdp
+
 	return set_remote_description("answer", remote_sdp)
 
 func mark_as_announced() -> Error:
 	if _announced:
 		push_error("The offer was already answered")
 		return Error.ERR_ALREADY_IN_USE
-		
+
 	_announced = true
 	return Error.OK
 

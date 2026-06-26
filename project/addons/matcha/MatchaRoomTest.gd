@@ -1,6 +1,6 @@
 # TODO: DOCUMENT, DOCUMENT, DOCUMENT!
 
-class_name MatchaRoom extends WebRTCMultiplayerPeer
+class_name MatchaRoomTest extends WebRTCMultiplayerPeer
 const Utils := preload("./lib/Utils.gd")
 const TrackerClient := preload("./tracker/TrackerClient.gd")
 const NostrClient := preload("./nostr/NostrClient.gd")
@@ -39,18 +39,18 @@ var peers:
 	get: return get_peers().values().map(func(v): return v.connection)
 
 # Static methods
-static func create_mesh_room(options:={}) -> MatchaRoom:
+static func create_mesh_room(options:={}) -> MatchaRoomTest:
 	options.type = "mesh"
-	return MatchaRoom.new(options)
+	return MatchaRoomTest.new(options)
 
-static func create_server_room(options:={}) -> MatchaRoom:
+static func create_server_room(options:={}) -> MatchaRoomTest:
 	options.type = "server"
-	return MatchaRoom.new(options)
+	return MatchaRoomTest.new(options)
 
-static func create_client_room(room_id: String, options:={}) -> MatchaRoom:
+static func create_client_room(room_id: String, options:={}) -> MatchaRoomTest:
 	options.type = "client"
 	options.room_id = room_id
-	return MatchaRoom.new(options)
+	return MatchaRoomTest.new(options)
 
 # Constructor
 func _init(options:={}):
@@ -58,7 +58,7 @@ func _init(options:={}):
 	if not "offer_timeout" in options: options.offer_timeout = _offer_timeout
 	if not "identifier" in options: options.identifier = "com.matcha.default"
 	# key off something to decide whether to use nostr or tracker
-	if not "tracker_urls" in options: options.tracker_urls = TrackerClient.DEFAULT_TRACKER_URLS
+	if not "tracker_urls" in options: options.tracker_urls = NostrClient.DEFAULT_RELAY_URLS
 
 	if not "room_id" in options: options.room_id = options.identifier.sha1_text().substr(0, 20)
 	if not "type" in options: options.type = "mesh"
@@ -104,12 +104,16 @@ func start() -> Error:
 		return Error.ERR_INVALID_DATA
 
 	# Create the tracker_clients based on the urls
-	for tracker_url in _socket_urls:
-		var tracker_client = TrackerClient.new(tracker_url, PiggybackClient.Protocol.TORRENT, _peer_id)
-		tracker_client.got_offer.connect(self._on_got_offer.bind(tracker_client))
-		tracker_client.got_answer.connect(self._on_got_answer.bind(tracker_client))
-		tracker_client.failure.connect(self._on_failure.bind(tracker_client))
-		_tracker_clients.append(tracker_client)
+	for url in _socket_urls:
+		var relay_client = NostrClient.new(url, _peer_id)
+		relay_client.got_announcement.connect(self._on_got_announcement.bind(relay_client))
+		relay_client.got_offer.connect(self._on_got_offer.bind(relay_client))
+		relay_client.got_answer.connect(self._on_got_answer.bind(relay_client))
+		relay_client.failure.connect(self._on_failure.bind(relay_client))
+
+		print("ANNOUNCING RELAY CLIENT %s with id %s" % [url, _peer_id])
+		relay_client.announce(_id)
+		_tracker_clients.append(relay_client)
 
 	Engine.get_main_loop().process_frame.connect(self.__poll)
 	return Error.OK
@@ -142,20 +146,22 @@ func send_event(event_name: String, event_args:=[], target_peer_ids:=[]):
 # Private methods
 func __poll():
 	poll()
-	_create_offers()
-	_handle_offers_announcment()
 
 func _remove_unanswered_offer(offer_id: String) -> void:
 	var offer := find_peer({ "answered": false, "offer_id": offer_id })
 	if offer != null:
 		offer.close()
 
-func _create_offer() -> void:
+func _create_offer(announce: PiggybackClient.Response, relay_client: PiggybackClient) -> void:
 	if _type == "client" and has_peer(1): return # We already created the host offer. So lets ignore the offer creating
 
 	var offer_peer := MatchaPeer.create_offer_peer()
 	var offer_rpc_id := 1 if _type == "client" else generate_unique_id()
+	offer_peer.id = announce.peer_id
+
 	add_peer(offer_peer, offer_rpc_id)
+
+	offer_peer.session_description_created.connect(relay_client.offer.bind(_id, announce.peer_id))
 
 	if offer_peer.start() == OK:
 		# Cleanup when the offer was not answered for long time
@@ -163,57 +169,30 @@ func _create_offer() -> void:
 	else:
 		remove_peer(offer_rpc_id)
 
-func _create_offers() -> void:
-	var unanswered_offers := find_peers({ "type": "offer", "answered": false })
-	if unanswered_offers.size() > 0: return # There are ongoing offers. Dont refresh the pool.
-	if _type == "client" and has_peer(1): return # If we are already connected in client mode dont create further offers
-
-	# Create as many offers as the pool_size
-	for i in range(_pool_size):
-		_create_offer()
-
-func _handle_offers_announcment():
-	var unannounced_offers := find_peers({ "type": "offer", "announced": false })
-	if unannounced_offers.size() == 0: return # There are no offers to announce
-
-	var announce_offers: Array = [] # The array we need for the tracker offer announcements
-	for offer_peer: MatchaPeer in unannounced_offers:
-		if not offer_peer.gathered: return # If we have ungathered offers we are not ready yet to announce.
-
-		if _type == "client":
-			# As client lets announce the host peer multiple times. Since we cannot have multiple peers with id 1 setup
-			if unannounced_offers.size() != 1:
-				push_error("In client mode you should have just 1 offer")
-				return
-			for i in range(_pool_size):
-				announce_offers.append({ "offer_id": Utils.gen_id(), "offer": { "type": "offer", "sdp": offer_peer.local_sdp } })
-		else:
-			announce_offers.append({ "offer_id": offer_peer.offer_id, "offer": { "type": "offer", "sdp": offer_peer.local_sdp } })
-
-	for offer_peer: MatchaPeer in unannounced_offers:
-		offer_peer.mark_as_announced()
-
-	for tracker_client in _tracker_clients: # Announce the offers via every tracker
-		tracker_client.announce(_id, announce_offers)
-
-func _send_answer_sdp(answer_sdp: String, peer: MatchaPeer, tracker_client: PiggybackClient):
+func _send_answer_sdp(_type: String, answer_sdp: String, peer: MatchaPeer, tracker_client: PiggybackClient):
 	tracker_client.answer(_id, peer.id, peer.offer_id, answer_sdp)
+
+func _on_got_announcement(announce: PiggybackClient.Response, relay_client: PiggybackClient) -> void:
+	if announce.info_hash != _id: return
+	if find_peer({ "id": announce.peer_id }) != null: return # Ignore if the peer is already known
+	if _type == "client" and announce.peer_id != _id: return # Ignore offers from others than host (in client mode)
+
+	_create_offer(announce, relay_client)
 
 func _on_got_offer(offer: PiggybackClient.Response, tracker_client: PiggybackClient) -> void:
 	if offer.info_hash != _id: return
-	if find_peer({ "id": offer.peer_id }) != null: return # Ignore if the peer is already known
+	if find_peer({ "id": offer.peer_id }) == null: return # Ignore if the peer is not known
 	if _type == "client" and offer.peer_id != _id: return # Ignore offers from others than host (in client mode)
 
-	var answer_peer := MatchaPeer.create_answer_peer(offer.offer_id, offer.sdp)
-	var answer_rpc_id := 1 if _type == "client" else generate_unique_id()
-	answer_peer.id = offer.peer_id
+	var offer_peer = find_peer({ "id": offer.peer_id })
 
-	answer_peer.sdp_created.connect(self._send_answer_sdp.bind(answer_peer, tracker_client))
-	print("adding peer %s" % answer_peer.id)
-	add_peer(answer_peer, answer_rpc_id)
+	# Ignore offers from peers with lower alphabetical peer_ids, this prevents offer glare
+	if peer_id >= offer_peer.id: return
 
-	if answer_peer.start() != OK:
-		remove_peer(answer_rpc_id)
+	# TODO Use the matcha approach
+	offer_peer.set_remote_description("offer", offer.sdp)
+	offer_peer.session_description_created.connect(self._send_answer_sdp.bind(offer_peer, tracker_client))
+
 
 func _on_got_answer(answer: PiggybackClient.Response, tracker_client: PiggybackClient) -> void:
 	if answer.info_hash != _id: return
@@ -225,11 +204,13 @@ func _on_got_answer(answer: PiggybackClient.Response, tracker_client: PiggybackC
 			offer_peer = get_peer(1).connection
 			offer_peer.offer_id = answer.offer_id # Fix the offer_id since we gave the server alot of offers to choose from
 	else:
-		offer_peer = find_peer({ "offer_id": answer.offer_id })
+		offer_peer = find_peer({ "id": answer.peer_id })
 	if offer_peer == null: return # Ignore if we dont know that offer
 
-	offer_peer.id = answer.peer_id
-	offer_peer.set_answer(answer.sdp)
+	offer_peer.set_remote_description("answer", answer.sdp)
+
+	# TODO Use this match approach
+	# offer_peer.set_answer(answer.sdp)
 
 func _on_failure(reason: String, tracker_client: PiggybackClient) -> void:
 	print("Tracker failure: ", reason, ", Tracker: ", tracker_client.tracker_url)

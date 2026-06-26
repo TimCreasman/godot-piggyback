@@ -44,7 +44,7 @@ public:
 
 	/** 64 byte schnorr sign.
 	 * */
-	PackedByteArray schnorr_sign(const String &msg_string) const;
+	PackedByteArray schnorr_sign(const PackedByteArray &msg_string) const;
 	// void pubkey() const;
 
 private:

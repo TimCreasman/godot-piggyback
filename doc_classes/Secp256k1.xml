@@ -6,8 +6,8 @@
 	<methods>
 		<method name="schnorr_sign" qualifiers="const">
 			<return type="PackedByteArray" />
-			<param index="0" name="message" type="String" />
-			<description>Create a schnorr signature</description>
+			<param index="0" name="id" type="PackedByteArray" />
+			<description>Create a schnorr signature of a 32 byte id</description>
 		</method>
 		<method name="get_public_key" qualifiers="const">
 			<return type="PackedByteArray" />

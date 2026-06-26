@@ -1,111 +1,202 @@
-extends RefCounted
-const Utils := preload("../lib/Utils.gd")
-const WebSocketClient := preload("../lib/WebSocketClient.gd")
+extends PiggybackClient
+# The NostrClient is a simple implementation of the Trysteroa nostr package
+# Learn more about it here: https://github.com/dmotz/trystero/blob/main/packages/nostr/src/index.ts#L43
 
-# Classes
-class Response:
-	var type: String # The type of the response ("offer" or "answer")
-	var info_hash: String # The info_hash which the repsonse belongs to
-	var peer_id: String # The peer_id of the other peer (who've sent it)
-	var offer_id: String # The offer_id that this offer/answer belongs to
-	var sdp: String # The sdp (webrtc session description) of the other peer
+const DEFAULT_RELAY_URLS: Array[String] = [
+	# "wss://basspistol.org",
+	# "wss://bucket.coracle.social",
+	# "wss://chorus.almostmachines.dev",
+	# "wss://chorus.pjv.me",
+	# "wss://communities.nos.social",
+	# "wss://ftp.halifax.rwth-aachen.de/nostr",
+	# "wss://hol.is",
+	# "wss://hornetstorage.net/relay",
+	# "wss://koru.bitcointxoko.org",
+	# "wss://nos.lol",
+	# "wss://nostr-01.uid.ovh",
+	# "wss://nostr-01.yakihonne.com",
+	# "wss://nostr-relay.corb.net",
+	# "wss://nostr.data.haus",
+	# "wss://nostr.islandarea.net",
+	# "wss://nostr.sathoarder.com",
+	# "wss://nostr.self-determined.de",
+	# "wss://nostr.tegila.com.br",
+	# "wss://nostr.vulpem.com",
+	# "wss://purplerelay.com",
+	# "wss://relay-can.zombi.cloudrodion.com",
+	# "wss://relay-rpi.edufeed.org",
+	# "wss://relay.agorist.space",
+	# "wss://relay.angor.io",
+	# "wss://relay.artio.inf.unibe.ch",
+	# "wss://relay.binaryrobot.com",
+	# "wss://relay.damus.io",
+	# "wss://relay.froth.zone",
+	# "wss://relay.libernet.app",
+	# "wss://relay.mostr.pub",
+	# "wss://relay.mostro.network",
+	# "wss://relay.nostr.place",
+	# "wss://relay.nostrdice.com",
+	# "wss://relay.notoshi.win",
+	# "wss://relay.sigit.io",
+	# "wss://relay02.lnfi.network",
+	# "wss://relay2.angor.io",
+	# "wss://schnorr.me",
+	# "wss://slick.mjex.me",
+	# "wss://social.amanah.eblessing.co",
+	# "wss://staging.yabu.me",
+	"wss://strfry.openhoofd.nl",
+	"wss://strfry.shock.network",
+	"wss://testnet-relay.samt.st",
+	"wss://top.testrelay.top",
+	"wss://x.kojira.io",
+	"wss://yabu.me/v2",
+]
 
-# Signals
-signal connected # Emitted when we connected to the tracker
-signal disconnected # Emitted when we disconnected from the tracker
-signal reconnecting # Emitted when we are reconnecting to the tracker (after unexpected disconnect)
-signal failure(reason: String) # Emitted when the tracker did not like something
-signal got_offer(offer: Response) # Emitted when we got an offer
-signal got_answer(answer: Response) # Emitted when we got an answer
+class NostrProtocol:
+	var kind: int #
+	var pubkey: String # Schnorr pub key
+	var created_at: int # Date sent
+	var tags: Array[Array] # Array of tuples of tag types
+	var content: String # Content to send to peer
+	var id: String # Sha256 hash of payload
+	var sig: String # Schnorr signature
 
-# Members
-var _socket: WebSocketClient # An internal reference to the websocket client
-var _peer_id: String # Our peer_id that is used to identify us
-var _relay_url: String # The tracker we are connected to
-
-# Getters
-var is_connected:
-	get: return _socket != null and _socket.is_connected
-var tracker_url:
-	get: return _relay_url
-var peer_id:
-	get: return _peer_id
-
-# Constructor
-func _init(relay_url: String, peer_id:=Utils.gen_id()) -> void:
-	_relay_url = relay_url
-	_peer_id = peer_id
-
-	_socket = WebSocketClient.new(_relay_url, {
-		"mode": WebSocketClient.Mode.JSON,
-		"reconnect_time": 3,
-		"reconnect_tries": 3
-	})
-	_socket.connected.connect(self._on_tracker_connected)
-	_socket.disconnected.connect(self._on_tracker_disconnected)
-	_socket.reconnecting.connect(self._on_tracker_reconnecting)
-	_socket.message.connect(self._on_tracker_message)
-
-# Public methods
-# This method is used to share our answer to an offer
-func answer(info_hash: String, to_peer_id: String, offer_id: String, sdp: String) -> void:
-	if not is_connected:
-		connected.connect(answer.bind(info_hash, to_peer_id, offer_id, sdp), CONNECT_ONE_SHOT)
-		return
-	_socket.send({
-		"action": "announce",
-		"info_hash": info_hash,
-		"peer_id": _peer_id,
-		"to_peer_id": to_peer_id,
-		"offer_id": offer_id,
-		"answer": {
-			"type": "answer",
-			"sdp": sdp
+	func to_dict() -> Dictionary:
+		return {
+			kind = kind,
+			pubkey = pubkey,
+			created_at = created_at,
+			tags = tags,
+			content = content,
+			id = id,
+			sig = sig,
 		}
-	})
 
-# This method is used to
-func announce(info_hash: String, offers: Array) -> void:
-	if not is_connected:
-		connected.connect(announce.bind(info_hash, offers), CONNECT_ONE_SHOT)
-		return
+const _event_msg_type = "EVENT"
 
-	_socket.send({
-		"action": "announce",
+var _pubkey
+var _secp256k1
+
+func _init(url: String, peer_id:=Utils.gen_id()) -> void:
+	super._init(url, Protocol.NOSTR, peer_id)
+	_secp256k1 = Secp256k1.new()
+	var err: int = _secp256k1.keygen()
+
+	_pubkey = _secp256k1.get_public_key().hex_encode()
+
+func _on_answer(info_hash: String, to_peer_id: String, _offer_id: String, sdp: String) -> void:
+	var content = JSON.stringify({
 		"info_hash": info_hash,
-		"peer_id": _peer_id,
-		"numwant": offers.size(),
-		"offers": offers
+		"peer_id": _self_id,
+		"answer": sdp
 	})
 
-# Private methods
-func _on_tracker_connected() -> void:
-	connected.emit()
+	_socket.send(_create_event(info_hash + to_peer_id, content))
 
-func _on_tracker_disconnected() -> void:
-	disconnected.emit()
+func _on_offer(sdp: String, info_hash: String, to_peer_id: String) -> void:
 
-func _on_tracker_reconnecting() -> void:
-	reconnecting.emit()
+	var content = JSON.stringify({
+		"info_hash": info_hash,
+		"peer_id": _self_id,
+		"offer": sdp
+	})
 
-func _on_tracker_message(data) -> void:
-	if not typeof(data) == TYPE_DICTIONARY: return
-	if "failure reason" in data:
-		failure.emit(data["failure reason"])
+	_socket.send(_create_event(info_hash + to_peer_id, content))
+
+func _on_announce(info_hash: String, _offers: Array) -> void:
+
+	var content = JSON.stringify({
+		"info_hash": info_hash,
+		"peer_id": _self_id,
+	})
+
+	_socket.send(_create_event(info_hash, content))
+
+	# Subscribe to the info_hash to receive all other announcements
+	_socket.send(_subscribe(info_hash))
+	# Also want to subscribe/create our own self topic, this is how this peer will get notified of answers
+	_socket.send(_subscribe(info_hash + _self_id))
+
+func _on_message(data) -> void:
+	print(data)
+	if not typeof(data) == TYPE_ARRAY: return
+
+	var payload: Array = []
+	payload.assign(data)
+	if payload.size() == 0: return
+
+	var msg_type = payload[0] as String
+
+	if msg_type != _event_msg_type:
+		if msg_type == "NOTICE":
+			push_error("Error from %s: %s" % [_url, payload[1]])
+		if msg_type == "OK" && not payload.get(2):
+			push_error("Error from %s: %s" % [_url, payload[1]])
 		return
-	if not "action" in data or data.action != "announce": return
-	if not "info_hash" in data: return
-	if "peer_id" in data and "offer_id" in data:
-		var response := Response.new()
-		response.info_hash = data.info_hash
-		response.peer_id = data.peer_id
-		response.offer_id = data.offer_id
 
-		if "offer" in data:
-			response.type = "offer"
-			response.sdp = data.offer.sdp
+	if payload.get(2) and typeof(payload.get(2)) == TYPE_DICTIONARY and "content" in payload.get(2):
+		var content = JSON.parse_string(payload.get(2)["content"])
+
+		var response := Response.new()
+		response.info_hash = content.info_hash
+		response.peer_id = content.peer_id
+
+		# Ignore events sent by me
+		if content.peer_id == _self_id:
+			return
+
+		if "offer" in content:
+			response.sdp = content.offer
 			got_offer.emit(response)
-		if "answer" in data:
-			response.type = "answer"
-			response.sdp = data.answer.sdp
+		elif "answer" in content:
+			response.sdp = content.answer
 			got_answer.emit(response)
+		else:
+			got_announcement.emit(response)
+
+func _create_event(info_hash: String, content: String) -> Array:
+	var payload = NostrProtocol.new()
+	payload.kind = _info_hash_to_kind(info_hash)
+	payload.tags = [["x", info_hash]] as Array[Array]
+	payload.created_at = _now()
+	payload.content = content
+	payload.pubkey = _pubkey
+
+	var id = JSON.stringify([
+		0,
+		payload.pubkey,
+		payload.created_at,
+		payload.kind,
+		payload.tags,
+		payload.content
+	]).sha256_buffer()
+
+	payload.id = id.hex_encode()
+	payload.sig = _secp256k1.schnorr_sign(id).hex_encode()
+
+	return [
+		_event_msg_type,
+		payload.to_dict()
+	]
+
+func _subscribe(topic: String) -> Array:
+	return [
+		"REQ",
+		topic,
+		{
+			"kinds": [_info_hash_to_kind(topic)],
+			"since": _now(),
+			"#x": [topic]
+		}
+	]
+
+func _now() -> int:
+	return floor(Time.get_unix_time_from_system())
+
+# Convert the info hash to a kind within the range of 20,000-29,999
+# This is within the range of ephemeral events
+func _info_hash_to_kind(info_hash: String) -> int:
+	var sum = 0
+	for byte in info_hash.to_ascii_buffer():
+		sum += byte
+	return (sum % 10_000) + 20_000

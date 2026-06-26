@@ -1,6 +1,7 @@
 // nly slightly modified from the example in the secp256k1 lib:
 // https://github.com/bitcoin-core/secp256k1/blob/master/examples/schnorr.c
 #include "godot_secp256k1.h"
+#include "godot_cpp/variant/packed_byte_array.hpp"
 
 void Secp256k1::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("schnorr_sign"), &Secp256k1::schnorr_sign);
@@ -43,11 +44,16 @@ int Secp256k1::keygen() {
 	return godot::OK;
 }
 
-PackedByteArray Secp256k1::schnorr_sign(const String &msg_string) const {
-	// Keep this variable alive to avoid immediately freeing the memory.
-	CharString utf8_string = msg_string.utf8();
-	const unsigned char *msg = (const unsigned char *)utf8_string.get_data();
-	unsigned char msg_hash[32];
+// This method expects the argument to be pre-hashed using sha256
+PackedByteArray Secp256k1::schnorr_sign(const PackedByteArray &hashed_id_bytes) const {
+	int64_t size = hashed_id_bytes.size();
+	if (size != 32) {
+		printf("Cannot sign a non-32 byte id\n");
+		return PackedByteArray();
+	}
+
+	const unsigned char *id = hashed_id_bytes.ptr();
+	// unsigned char msg_hash[32];
 
 	// TODO add optional custom tag to Secp256k1 constructor
 	unsigned char tag[] = { 'n', 'o', 's', 't', 'r', 'w', 'e', 'b', 'r', 't', 'c' };
@@ -57,7 +63,7 @@ PackedByteArray Secp256k1::schnorr_sign(const String &msg_string) const {
 	unsigned char serialized_pubkey[32];
 	unsigned char signature[64];
 
-	int is_signature_valid, is_signature_valid2;
+	int is_signature_valid;
 	int return_val;
 
 	if (!fill_random(randomize, sizeof(randomize))) {
@@ -92,8 +98,8 @@ PackedByteArray Secp256k1::schnorr_sign(const String &msg_string) const {
 	 * message that has intended consequences in the intended context (e.g.,
 	 * protocol A) but would have unintended consequences if it were valid in
 	 * some other context (e.g., protocol B). */
-	return_val = secp256k1_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
-	assert(return_val);
+	// return_val = secp256k1_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
+	// assert(return_val);
 
 	/* Generate 32 bytes of randomness to use with BIP-340 schnorr signing. */
 	if (!fill_random(auxiliary_rand, sizeof(auxiliary_rand))) {
@@ -109,7 +115,7 @@ PackedByteArray Secp256k1::schnorr_sign(const String &msg_string) const {
 	 * to the signing function to improve security against side-channel attacks.
 	 * Signing with a valid context, a 32-byte message, a verified keypair, and
 	 * any 32 bytes of auxiliary random data should never fail. */
-	return_val = secp256k1_schnorrsig_sign32(ctx, signature, msg_hash, &keypair, auxiliary_rand);
+	return_val = secp256k1_schnorrsig_sign32(ctx, signature, id, &keypair, auxiliary_rand);
 	assert(return_val);
 
 	/*** Verification ***/
@@ -122,11 +128,11 @@ PackedByteArray Secp256k1::schnorr_sign(const String &msg_string) const {
 	// }
 
 	/* Compute the tagged hash on the received messages using the same tag as the signer. */
-	return_val = secp256k1_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
-	assert(return_val);
+	// return_val = secp256k1_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
+	// assert(return_val);
 
 	/* Verify a signature. This will return 1 if it's valid and 0 if it's not. */
-	is_signature_valid = secp256k1_schnorrsig_verify(ctx, signature, msg_hash, 32, &pubkey);
+	is_signature_valid = secp256k1_schnorrsig_verify(ctx, signature, id, 32, &pubkey);
 	if (!is_signature_valid) {
 		print_error("Signature invalid. Make sure to run keygen() first\n");
 		return PackedByteArray();
