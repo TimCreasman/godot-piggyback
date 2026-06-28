@@ -48,8 +48,8 @@ android.release.arm32 = "./bin/android/libgodot_secp256k1.android.template_relea
 web.debug.threads.wasm32 = "./bin/web/libgodot_secp256k1.web.template_debug.wasm32.threads.wasm"
 web.release.threads.wasm32 = "./bin/web/libgodot_secp256k1.web.template_release.wasm32.threads.wasm"
 
-web.debug.wasm32 = "./bin/web/libgodot_secp256k1.web.template_debug.wasm32.wasm"
-web.release.wasm32 = "./bin/web/libgodot_secp256k1.web.template_release.wasm32.wasm"
+web.debug.wasm32 = "./bin/web/libgodot_secp256k1.web.template_debug.wasm32.nothreads.wasm"
+web.release.wasm32 = "./bin/web/libgodot_secp256k1.web.template_release.wasm32.nothreads.wasm"
 
 
 [dependencies]

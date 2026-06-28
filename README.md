@@ -1,104 +1,79 @@
-# godot-matcha
-Easy webrtc matchmaking using WebTorrent tracker.  
-This project uses webtorrent to do signaling. This allows you to connect players peer2peer without a server!  
-I plan on improving this library and add more features. Stay tuned!
+# godot-piggyback
 
-### [Try the demo here](https://freehuntx.github.io/godot-matcha/)
+> Serverless WebRTC matchmaking for Godot - perfect as a "set-and-forget" solution for game jams.
+
+![godot-piggyback logo](assets/piggybacking-icon.jpg)
+
+This package signals peers by **piggybacking** off existing distributed networks, requiring no dedicated matchmaking server. It defaults to [Nostr](https://nostr.com/) relays, with [WebTorrent](https://webtorrent.io/) tracker support as well.
+
+---
+
+## Attribution
+
+Forked from [freehuntx/godot-matcha](https://github.com/freehuntx/godot-matcha/tree/master), which was itself inspired by the JavaScript library [Trystero](https://github.com/dmotz/trystero). Huge thanks to both projects and their developers.
+
+This fork adds support for Nostr relays, which tend to be more reliable and plentiful than WebTorrent trackers.
+
+---
 
 ## Installation
-1. Copy `addons/matcha` to your godot project.
-2. For non browser builds: Install [webrtc-native](https://github.com/godotengine/webrtc-native)
-3. Done!
+
+1. Copy `addons/piggyback` into your Godot project.
+2. **Non-browser builds only:** install the [webrtc-native](https://github.com/godotengine/webrtc-native) plugin.
+3. That's it - you're ready to go!
+
+---
 
 ## Usage
-### Example (Mesh):
 
-```
+Example scenes are available under `project/examples`.
+
+### Mesh Example
+
+All peers connect to each other in a fully-connected mesh topology.
+
+```gdscript
 extends Node
 
-var mp1 := MatchaRoom.create_mesh_room({ "identifier": "my-unique-game-identifier" })
-var mp2 := MatchaRoom.create_mesh_room({ "identifier": "my-unique-game-identifier" })
+var mp1 := PiggybackRoom.create_mesh_room({ "identifier": "my-unique-game-identifier" })
+var mp2 := PiggybackRoom.create_mesh_room({ "identifier": "my-unique-game-identifier" })
 
 func _init():
-	mp1.peer_joined.connect(func(_id, peer):
-		print("(1) Peer connected: ", peer.peer_id)
-	)
-
-	mp1.peer_left.connect(func(_id, peer):
-		print("(1) Peer disconnected: ", peer.peer_id)
-	)
-
-	mp2.peer_joined.connect(func(_id, peer):
-		print("(2) Peer connected: ", peer.peer_id)
-	)
-
-	mp2.peer_left.connect(func(_id, peer):
-		print("(2) Peer disconnected: ", peer.peer_id)
-	)
+    mp1.peer_joined.connect(func(_id, peer):
+        print("(1) Peer connected: ", peer.peer_id)
+    )
+    mp1.peer_left.connect(func(_id, peer):
+        print("(1) Peer disconnected: ", peer.peer_id)
+    )
+    mp2.peer_joined.connect(func(_id, peer):
+        print("(2) Peer connected: ", peer.peer_id)
+    )
+    mp2.peer_left.connect(func(_id, peer):
+        print("(2) Peer disconnected: ", peer.peer_id)
+    )
 ```
 
-### Example (Server/Client):
-```
+### Server / Client Example
+
+One peer acts as the host; others join by room ID.
+
+```gdscript
 extends Node
 
-var server := MatchaRoom.create_server_room()
-var client := MatchaRoom.create_client_room(server.room_id) # Client must know the room id
+var server := PiggybackRoom.create_server_room()
+var client := PiggybackRoom.create_client_room(server.room_id) # Client must know the room ID
 
 func _init():
-	server.peer_joined.connect(func(_id, peer):
-		print("(server) Peer connected: ", peer.peer_id)
-	)
-
-	server.peer_left.connect(func(_id, peer):
-		print("(server) Peer disconnected: ", peer.peer_id)
-	)
-
-	client.peer_joined.connect(func(_id, peer):
-		print("(client) Peer connected: ", peer.peer_id)
-	)
-
-	client.peer_left.connect(func(_id, peer):
-		print("(client) Peer disconnected: ", peer.peer_id)
-	)
+    server.peer_joined.connect(func(_id, peer):
+        print("(server) Peer connected: ", peer.peer_id)
+    )
+    server.peer_left.connect(func(_id, peer):
+        print("(server) Peer disconnected: ", peer.peer_id)
+    )
+    client.peer_joined.connect(func(_id, peer):
+        print("(client) Peer connected: ", peer.peer_id)
+    )
+    client.peer_left.connect(func(_id, peer):
+        print("(client) Peer disconnected: ", peer.peer_id)
+    )
 ```
-
-# Changelog
-### 29. Dec. 2023
-- Replaced asserts with push_error + Error return value
-  - This fixed some nasty invisible bugs
-- Added example for server/client implementation
-- Improved MatchaPeer class
-  - Made it extend from WebRTCPeerConnection
-- Improved MatchaRoom class
-  - Made it extend from MultiplayerPeer
-  - Added peer_joined/peer_left signals for direct access to the peer
-  - Changed naming from info_hash to room_id
-  - Added client/server/mesh functionality
-- Improved TrackerClient class
-  - Proper user-agent for non-web environment
-  - Cleaner code
-  - More documentation
-- Prepared nostr implementation
-  - In the future you can use nostr aswell as webtorrent
-- Prepared lobby implementation
-  - In the future you can find/list/create lobbies
-
-
-### 26. Dec. 2023
-- Replaces EventEmitter with native Signals
-  - EventEmitter did not improve RefCounted reference issue behaviour so replaced it with signals
-- Removed TrackerRoom class
-  - Got replaced with MatchaRoom
-- Exposed MatchaRoom class
-  - Using multiplayer api
-- Added example game "bobble"
-- Added web export github page for example
-
-### 23. Dec. 2023
-- Initial commit
-- Exposed TrackerRoom class
-
-# Thanks to
-## dmotz - https://github.com/dmotz/trystero
-I got the idea for using webtorrent for signaling from that project.  
-Big thanks :)

@@ -1,6 +1,6 @@
 # The TrackerClient is a simple implementation of a WebTorrent Tracker Client
 # Learn more about it here (js): https://github.com/webtorrent/bittorrent-tracker
-extends PiggybackClient
+extends PiggybackConnection
 
 const DEFAULT_TRACKER_URLS: Array[String] = [
 	"wss://tracker.webtorrent.dev",
@@ -10,7 +10,7 @@ const DEFAULT_TRACKER_URLS: Array[String] = [
 ]
 
 func _init(url: String, peer_id:=Utils.gen_id()) -> void:
-	super._init(url, Protocol.TRACKER, peer_id)
+	super._init(url, PiggybackRoom.Protocol.TRACKER, peer_id)
 
 # This method is used to share our answer to an offer
 func _on_answer(info_hash: String, to_peer_id: String, offer_id: String, sdp: String) -> void:

@@ -1,16 +1,16 @@
-class_name MatchaLobby extends RefCounted
+class_name PiggybackLobby extends RefCounted
 
 # Signals
-signal joined_room(room: MatchaRoom)
-signal left_room(room: MatchaRoom)
+signal joined_room(room: PiggybackRoom)
+signal left_room(room: PiggybackRoom)
 signal room_created(room: Dictionary)
 signal room_updated(room: Dictionary)
 signal room_closed(room: Dictionary)
 
 # Members
-var _lobby: MatchaRoom
+var _lobby: PiggybackRoom
 var _rooms := {}
-var _current_room: MatchaRoom
+var _current_room: PiggybackRoom
 
 # Getters
 var room_list:
@@ -21,7 +21,7 @@ var current_room:
 # Constructor
 func _init(options:={}):
 	if not "identifier" in options: options.identifier = "com.matcha.lobby"
-	_lobby = MatchaRoom.create_mesh_room(options)
+	_lobby = PiggybackRoom.create_mesh_room(options)
 	_lobby.peer_joined.connect(self._on_peer_joined)
 	_lobby.peer_left.connect(self._on_peer_left)
 
@@ -35,7 +35,7 @@ func join_room(room_id: String) -> Error:
 		push_error("Already in a room")
 		return Error.ERR_ALREADY_IN_USE
 
-	_current_room = MatchaRoom.create_client_room(room_id)
+	_current_room = PiggybackRoom.create_client_room(room_id)
 	joined_room.emit(_current_room)
 
 	return Error.OK
@@ -48,7 +48,7 @@ func create_room(room_meta:={}) -> Error:
 		push_error("Already opened a room. Close it first!")
 		return Error.ERR_ALREADY_IN_USE
 
-	_current_room = MatchaRoom.create_server_room()
+	_current_room = PiggybackRoom.create_server_room()
 	var room = {
 		"id": _current_room.id,
 		"meta": room_meta
@@ -119,7 +119,7 @@ func _remove_room(room_id: String) -> bool:
 	return false
 
 # Peer callbacks
-func _on_peer_joined(id: int, peer: MatchaPeer) -> void:
+func _on_peer_joined(id: int, peer: PiggybackPeer) -> void:
 	peer.on_event("create_room", self._on_peer_created_room.bind(peer))
 	peer.on_event("update_room", self._on_peer_updated_room.bind(peer))
 	peer.on_event("close_room", self._on_peer_closed_room.bind(peer))
@@ -127,28 +127,28 @@ func _on_peer_joined(id: int, peer: MatchaPeer) -> void:
 	if _lobby.peer_id in _rooms:
 		peer.send_event("create_room", [_rooms[_lobby.peer_id]])
 
-func _on_peer_left(_rpc_id: int, peer: MatchaPeer) -> void:
+func _on_peer_left(_rpc_id: int, peer: PiggybackPeer) -> void:
 	if peer.id in _rooms:
 		var room = _rooms[peer.id]
 		_rooms.erase(peer.id)
 		room_closed.emit(room)
 
 # Peer events
-func _on_peer_created_room(room, peer: MatchaPeer) -> void:
+func _on_peer_created_room(room, peer: PiggybackPeer) -> void:
 	if peer.id in _rooms: return
 	if not _verify_room(room): return
 
 	_rooms[peer.id] = room
 	room_created.emit(room)
 
-func _on_peer_updated_room(room_meta: Dictionary, peer: MatchaPeer) -> void:
+func _on_peer_updated_room(room_meta: Dictionary, peer: PiggybackPeer) -> void:
 	if not peer.id in _rooms: return
 	if not _verify_room_meta(room_meta): return
 
 	_rooms[peer.id].meta = room_meta
 	room_updated.emit(_rooms[peer.id])
 
-func _on_peer_closed_room(peer: MatchaPeer) -> void:
+func _on_peer_closed_room(peer: PiggybackPeer) -> void:
 	if peer.id in _rooms:
 		var room = _rooms[peer.id]
 		_rooms.erase(peer.id)

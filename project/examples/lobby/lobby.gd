@@ -1,7 +1,7 @@
 extends Node2D
 
 @onready var _room_list: ItemList = $room_list
-var _lobby := MatchaLobby.new({ "identifier": "com.matcha.examples.lobby" })
+var _lobby := PiggybackLobby.new({ "identifier": "com.matcha.examples.lobby" })
 var _selected_room
 
 func _init():
@@ -17,7 +17,7 @@ func _ready():
 # Private methods
 
 # Callbacks
-func _on_joined_room(room: MatchaRoom):
+func _on_joined_room(room: PiggybackRoom):
 	room.peer_joined.connect(self._on_peer_joined_room)
 	room.peer_left.connect(self._on_peer_left_room)
 	$room_join_btn.disabled = true
@@ -25,7 +25,7 @@ func _on_joined_room(room: MatchaRoom):
 	$current_room/room_log.text = "You joined the room: %s\n" % [room.id]
 	$current_room/room_leave_btn.disabled = false
 
-func _on_left_room(_room: MatchaRoom):
+func _on_left_room(_room: PiggybackRoom):
 	$current_room/room_log.text += "You left the room\n"
 	$current_room/room_leave_btn.disabled = true
 	$room_join_btn.disabled = false
@@ -57,10 +57,10 @@ func _on_room_closed(room: Dictionary) -> void:
 		_room_list.remove_item(i)
 		return
 
-func _on_peer_joined_room(_rpc_id: int, peer: MatchaPeer):
+func _on_peer_joined_room(_rpc_id: int, peer: PiggybackPeer):
 	$current_room/room_log.text += "Peer joined the room (id: %s)\n" % [peer.id]
 
-func _on_peer_left_room(_rpc_id: int, peer: MatchaPeer):
+func _on_peer_left_room(_rpc_id: int, peer: PiggybackPeer):
 	$current_room/room_log.text += "Peer left the room (id: %s)\n" % [peer.id]
 
 # UI Callbacks

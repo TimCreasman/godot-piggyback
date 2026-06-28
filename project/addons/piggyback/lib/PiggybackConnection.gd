@@ -1,6 +1,6 @@
 ## This is the central interface for sending data across either a webtorrent tracker or nostr relay. It is protocol-agnostic
 @abstract
-class_name PiggybackClient extends RefCounted
+class_name PiggybackConnection extends RefCounted
 const Utils := preload("../lib/Utils.gd")
 const WebSocketClient := preload("../lib/WebSocketClient.gd")
 
@@ -11,8 +11,6 @@ class Response:
 	var peer_id: String # The self_id of the other peer (who've sent it)
 	var offer_id: String # The offer_id that this offer/answer belongs to
 	var sdp: String # The sdp (webrtc session description) of the other peer
-
-enum Protocol { TRACKER, NOSTR }
 
 # Signals
 signal connected # Emitted when we connected to the tracker
@@ -27,7 +25,7 @@ signal got_announcement(announce: Response) # Emitted when we got an answer
 var _socket: WebSocketClient # An internal reference to the websocket client
 var _self_id: String # Our self_id that is used to identify us
 var _url: String # The tracker we are connected to
-var _type: Protocol
+var _protocol: PiggybackRoom.Protocol
 
 # Getters
 var is_connected:
@@ -38,9 +36,9 @@ var self_id:
 	get: return _self_id
 
 # Constructor
-func _init(url: String, type := Protocol.NOSTR, peer_id:=Utils.gen_id()) -> void:
+func _init(url: String, protocol := PiggybackRoom.Protocol.NOSTR, peer_id:=Utils.gen_id()) -> void:
 	_url = url
-	_type = type
+	_protocol = protocol
 	_self_id = peer_id
 
 	_socket = WebSocketClient.new(_url, {

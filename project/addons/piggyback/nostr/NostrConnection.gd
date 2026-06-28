@@ -1,7 +1,8 @@
-extends PiggybackClient
+extends PiggybackConnection
 # The NostrClient is a simple implementation of the Trysteroa nostr package
 # Learn more about it here: https://github.com/dmotz/trystero/blob/main/packages/nostr/src/index.ts#L43
 
+## Only uses seven of the available relays for now. Batching should be introduced before this entire array gets used
 const DEFAULT_RELAY_URLS: Array[String] = [
 	"wss://basspistol.org",
 	"wss://bucket.coracle.social",
@@ -9,7 +10,7 @@ const DEFAULT_RELAY_URLS: Array[String] = [
 	"wss://chorus.pjv.me",
 	"wss://communities.nos.social",
 	"wss://ftp.halifax.rwth-aachen.de/nostr",
-	# "wss://hol.is",
+	"wss://hol.is",
 	# "wss://hornetstorage.net/relay",
 	# "wss://koru.bitcointxoko.org",
 	# "wss://nos.lol",
@@ -77,12 +78,10 @@ const _event_msg_type = "EVENT"
 var _pubkey
 var _secp256k1
 
-func _init(url: String, peer_id:=Utils.gen_id()) -> void:
-	super._init(url, Protocol.NOSTR, peer_id)
-	_secp256k1 = Secp256k1.new()
-	var err: int = _secp256k1.keygen()
-
-	_pubkey = _secp256k1.get_public_key().hex_encode()
+func _init(url: String, peer_id:=Utils.gen_id(), secp256k1: Secp256k1 = Secp256k1.new()) -> void:
+	super._init(url, PiggybackRoom.Protocol.NOSTR, peer_id)
+	_secp256k1 = secp256k1
+	_pubkey = secp256k1.get_public_key().hex_encode()
 
 func _on_answer(info_hash: String, to_peer_id: String, _offer_id: String, sdp: String) -> void:
 	var content = JSON.stringify({

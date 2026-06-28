@@ -28,7 +28,7 @@
 #include <bcrypt.h>
 #pragma comment(lib, "bcrypt.lib")
 #include <ntstatus.h>
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__wasm__)
 #include <sys/random.h>
 #elif defined(__OpenBSD__)
 #include <unistd.h>

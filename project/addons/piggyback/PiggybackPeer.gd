@@ -1,6 +1,6 @@
 # TODO: DOCUMENT, DOCUMENT, DOCUMENT!
 
-class_name MatchaPeer extends WebRTCPeerConnection
+class_name PiggybackPeer extends WebRTCPeerConnection
 const Utils := preload("./lib/Utils.gd")
 
 enum State { NEW, GATHERING, CONNECTING, CONNECTED, CLOSED }
@@ -45,11 +45,11 @@ var offer_id:
 	set(value): _offer_id = value
 
 # Static methods
-static func create_offer_peer(offer_id := Utils.gen_id()) -> MatchaPeer:
-	return MatchaPeer.new("offer", offer_id)
+static func create_offer_peer(offer_id := Utils.gen_id()) -> PiggybackPeer:
+	return PiggybackPeer.new("offer", offer_id)
 
-static func create_answer_peer(offer_id: String, remote_sdp: String) -> MatchaPeer:
-	return MatchaPeer.new("answer", offer_id, remote_sdp)
+static func create_answer_peer(offer_id: String, remote_sdp: String) -> PiggybackPeer:
+	return PiggybackPeer.new("answer", offer_id, remote_sdp)
 
 # Constructor
 func _init(type: String, offer_id: String, remote_sdp=""):
