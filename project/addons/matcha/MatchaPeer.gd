@@ -11,7 +11,7 @@ signal connected
 signal disconnected
 signal closed
 signal connecting_failed
-signal sdp_created(sdp: String)
+signal sdp_created(_type:String, sdp: String)
 
 # Members
 var _announced := false
@@ -151,7 +151,7 @@ func __poll() -> void:
 			return
 
 		_state = State.CONNECTING
-		sdp_created.emit(_local_sdp)
+		sdp_created.emit(_type, _local_sdp)
 		connecting.emit()
 
 	var connection_state := get_connection_state()

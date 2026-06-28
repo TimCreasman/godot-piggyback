@@ -12,7 +12,7 @@ class Response:
 	var offer_id: String # The offer_id that this offer/answer belongs to
 	var sdp: String # The sdp (webrtc session description) of the other peer
 
-enum Protocol { TORRENT, NOSTR }
+enum Protocol { TRACKER, NOSTR }
 
 # Signals
 signal connected # Emitted when we connected to the tracker

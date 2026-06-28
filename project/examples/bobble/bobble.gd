@@ -1,7 +1,7 @@
 extends Node2D
 const PlayerComponent := preload("./components/player.tscn")
 
-var matcha_room := MatchaRoomTest.create_mesh_room()
+var matcha_room := PiggybackRoom.create_mesh_room({"protocol": PiggybackClient.Protocol.TRACKER})
 var players := {}
 var local_player:
 	get:

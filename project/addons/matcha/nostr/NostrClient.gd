@@ -3,12 +3,12 @@ extends PiggybackClient
 # Learn more about it here: https://github.com/dmotz/trystero/blob/main/packages/nostr/src/index.ts#L43
 
 const DEFAULT_RELAY_URLS: Array[String] = [
-	# "wss://basspistol.org",
-	# "wss://bucket.coracle.social",
-	# "wss://chorus.almostmachines.dev",
-	# "wss://chorus.pjv.me",
-	# "wss://communities.nos.social",
-	# "wss://ftp.halifax.rwth-aachen.de/nostr",
+	"wss://basspistol.org",
+	"wss://bucket.coracle.social",
+	"wss://chorus.almostmachines.dev",
+	"wss://chorus.pjv.me",
+	"wss://communities.nos.social",
+	"wss://ftp.halifax.rwth-aachen.de/nostr",
 	# "wss://hol.is",
 	# "wss://hornetstorage.net/relay",
 	# "wss://koru.bitcointxoko.org",
@@ -44,12 +44,12 @@ const DEFAULT_RELAY_URLS: Array[String] = [
 	# "wss://slick.mjex.me",
 	# "wss://social.amanah.eblessing.co",
 	# "wss://staging.yabu.me",
-	"wss://strfry.openhoofd.nl",
-	"wss://strfry.shock.network",
-	"wss://testnet-relay.samt.st",
-	"wss://top.testrelay.top",
-	"wss://x.kojira.io",
-	"wss://yabu.me/v2",
+	# "wss://strfry.openhoofd.nl",
+	# "wss://strfry.shock.network",
+	# "wss://testnet-relay.samt.st",
+	# "wss://top.testrelay.top",
+	# "wss://x.kojira.io",
+	# "wss://yabu.me/v2",
 ]
 
 class NostrProtocol:
@@ -118,7 +118,6 @@ func _on_announce(info_hash: String, _offers: Array) -> void:
 	_socket.send(_subscribe(info_hash + _self_id))
 
 func _on_message(data) -> void:
-	print(data)
 	if not typeof(data) == TYPE_ARRAY: return
 
 	var payload: Array = []

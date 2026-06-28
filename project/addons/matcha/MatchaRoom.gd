@@ -105,7 +105,7 @@ func start() -> Error:
 
 	# Create the tracker_clients based on the urls
 	for tracker_url in _socket_urls:
-		var tracker_client = TrackerClient.new(tracker_url, PiggybackClient.Protocol.TORRENT, _peer_id)
+		var tracker_client = TrackerClient.new(tracker_url, PiggybackClient.Protocol.TRACKER, _peer_id)
 		tracker_client.got_offer.connect(self._on_got_offer.bind(tracker_client))
 		tracker_client.got_answer.connect(self._on_got_answer.bind(tracker_client))
 		tracker_client.failure.connect(self._on_failure.bind(tracker_client))
