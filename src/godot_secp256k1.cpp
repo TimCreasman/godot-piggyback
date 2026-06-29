@@ -1,4 +1,4 @@
-// nly slightly modified from the example in the secp256k1 lib:
+// Only slightly modified from the example in the secp256k1 lib:
 // https://github.com/bitcoin-core/secp256k1/blob/master/examples/schnorr.c
 #include "godot_secp256k1.h"
 #include "godot_cpp/variant/packed_byte_array.hpp"
@@ -53,9 +53,7 @@ PackedByteArray Secp256k1::schnorr_sign(const PackedByteArray &hashed_id_bytes) 
 	}
 
 	const unsigned char *id = hashed_id_bytes.ptr();
-	// unsigned char msg_hash[32];
 
-	// TODO add optional custom tag to Secp256k1 constructor
 	unsigned char tag[] = { 'n', 'o', 's', 't', 'r', 'w', 'e', 'b', 'r', 't', 'c' };
 
 	unsigned char randomize[32];
@@ -84,23 +82,6 @@ PackedByteArray Secp256k1::schnorr_sign(const PackedByteArray &hashed_id_bytes) 
 
 	/*** Signing ***/
 
-	/* Instead of signing (possibly very long) messages directly, we sign a
-	 * 32-byte hash of the message in this example.
-	 *
-	 * We use secp256k1_tagged_sha256 to create this hash. This function expects
-	 * a context-specific "tag", which restricts the context in which the signed
-	 * messages should be considered valid. For example, if protocol A mandates
-	 * to use the tag "my_fancy_protocol" and protocol B mandates to use the tag
-	 * "my_boring_protocol", then signed messages from protocol A will never be
-	 * valid in protocol B (and vice versa), even if keys are reused across
-	 * protocols. This implements "domain separation", which is considered good
-	 * practice. It avoids attacks in which users are tricked into signing a
-	 * message that has intended consequences in the intended context (e.g.,
-	 * protocol A) but would have unintended consequences if it were valid in
-	 * some other context (e.g., protocol B). */
-	// return_val = secp256k1_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
-	// assert(return_val);
-
 	/* Generate 32 bytes of randomness to use with BIP-340 schnorr signing. */
 	if (!fill_random(auxiliary_rand, sizeof(auxiliary_rand))) {
 		print_error("Failed to generate randomness\n");
@@ -127,10 +108,6 @@ PackedByteArray Secp256k1::schnorr_sign(const PackedByteArray &hashed_id_bytes) 
 	// 	return PackedByteArray();
 	// }
 
-	/* Compute the tagged hash on the received messages using the same tag as the signer. */
-	// return_val = secp256k1_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
-	// assert(return_val);
-
 	/* Verify a signature. This will return 1 if it's valid and 0 if it's not. */
 	is_signature_valid = secp256k1_schnorrsig_verify(ctx, signature, id, 32, &pubkey);
 	if (!is_signature_valid) {
@@ -139,26 +116,10 @@ PackedByteArray Secp256k1::schnorr_sign(const PackedByteArray &hashed_id_bytes) 
 	}
 	assert(is_signature_valid);
 
-	// print_line(vformat("Is the signature valid? %s\n", is_signature_valid ? "true" : "false"));
-	// print_line("Secret Key: ");
-	//
-	// print_hex(seckey, sizeof(seckey));
-	// printf("Public Key: ");
-	// print_hex(serialized_pubkey, sizeof(serialized_pubkey));
-	// printf("Signature: ");
-	// print_hex(signature, sizeof(signature));
-
 	return _unsigned_char_to_packed_byte_array(signature, 64);
 }
 
 PackedByteArray Secp256k1::get_public_key() {
-	/* Deserialize the public key. This will return 0 if the public key can't
-	 * be parsed correctly */
-	// if (!secp256k1_xonly_pubkey_parse(ctx, &pubkey, serialized_pubkey)) {
-	// 	print_error("Failed parsing the public key\n");
-	// 	return PackedByteArray();
-	// }
-
 	return _unsigned_char_to_packed_byte_array(serialized_pubkey, 32);
 }
 

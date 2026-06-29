@@ -1,6 +1,6 @@
 [configuration]
 entry_symbol = "godot_secp256k1_init"
-compatibility_minimum = "4.6"
+compatibility_minimum = "4.4"
 
 [libraries]
 ; Relative paths ensure that our GDExtension can be placed anywhere in the project directory.
