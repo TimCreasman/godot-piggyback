@@ -1,2 +1,7 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+
+# Only include the addons folder when downloading from the Asset Store.
+/**        export-ignore
+/project/addons    !export-ignore
+/project/addons/** !export-ignore

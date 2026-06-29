@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://dskg1evbw1dv"]
+
+[ext_resource type="Script" uid="uid://bik6jdwhy6qyx" path="res://examples/bobble/bobble.gd" id="1_67bh4"]
+
+[node name="Bobble" type="Node2D" unique_id=151652299]
+script = ExtResource("1_67bh4")
+
+[node name="Players" type="Node2D" parent="." unique_id=1645763062]
+position = Vector2(0, -1)
+
+[node name="UI" type="Control" parent="." unique_id=213608503]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -8.0
+offset_right = 1189.0
+offset_bottom = 802.0
+
+[node name="chat_history" type="RichTextLabel" parent="UI" unique_id=136450270]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 597.0
+offset_right = 1024.0
+offset_bottom = 726.0
+text = "
+
+"
+scroll_following = true
+
+[node name="chat_input" type="LineEdit" parent="UI" unique_id=312439768]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 734.0
+offset_right = 1109.0
+offset_bottom = 778.0
+placeholder_text = "Type a chat message..."
+
+[node name="secret_button" type="Button" parent="UI" unique_id=242023895]
+layout_mode = 0
+offset_left = 1043.0
+offset_top = 622.0
+offset_right = 1186.0
+offset_bottom = 716.0
+text = "Secret button
+What will it do? :)"
+
+[node name="chat_send" type="Button" parent="UI" unique_id=297523821]
+layout_mode = 0
+offset_left = 1116.0
+offset_top = 734.0
+offset_right = 1186.0
+offset_bottom = 778.0
+text = "Send"
+
+[connection signal="text_submitted" from="UI/chat_input" to="." method="_on_line_edit_text_submitted"]
+[connection signal="pressed" from="UI/secret_button" to="." method="_on_secret_button_pressed"]
+[connection signal="pressed" from="UI/chat_send" to="." method="_on_chat_send_pressed"]
