@@ -3,5 +3,5 @@
 
 # Only include the addons folder when downloading from the Asset Store.
 /**        export-ignore
-/project/addons    !export-ignore
-/project/addons/** !export-ignore
+/addons    !export-ignore
+/addons/** !export-ignore

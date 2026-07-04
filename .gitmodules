@@ -1,7 +1,8 @@
-[submodule "secp256k1"]
-	path = secp256k1
-	url = https://github.com/bitcoin-core/secp256k1.git
-[submodule "godot-cpp"]
-	path = godot-cpp
-	url = https://github.com/godotengine/godot-cpp.git
-	branch = 4.3
+[submodule "project/addons/godot-secp256k1"]
+	path = project/addons/godot-secp256k1
+	url = git@github.com:TimCreasman/godot-secp256k1.git
+	branch = versions/1.0.0
+[submodule "addons/godot-secp256k1"]
+	path = addons/godot-secp256k1
+	url = git@github.com:TimCreasman/godot-secp256k1.git
+	branch = versions/1.0.0
