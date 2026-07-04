@@ -8,26 +8,18 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
-config/name="matcha"
-run/main_scene="res://root.tscn"
-config/features=PackedStringArray("4.2", "GL Compatibility")
+config/name="Piggyback WebRTC"
+run/main_scene="uid://dskg1evbw1dv"
+config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
-
-[audio]
-
-driver/mix_rate.web=44100
 
 [display]
 
-window/size/viewport_width=1200
-window/size/viewport_height=800
-window/stretch/mode="viewport"
-window/stretch/aspect="keep_width"
-
-[rendering]
-
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
-textures/vram_compression/import_etc2_astc=true
+window/size/viewport_width=1500
+window/size/viewport_height=1000
