@@ -18,9 +18,11 @@ This fork adds support for Nostr relays, which tend to be more reliable and plen
 
 ## Installation
 
-1. Copy everything under `addons/` into your Godot project.
-2. **Non-browser builds only:** install the [webrtc-native](https://github.com/godotengine/webrtc-native) plugin.
-3. That's it - you're ready to go!
+1. Clone this repository.
+2. Run `git submodule update --init --recursive` (This installs the secp256k1 dependency)
+3. Copy everything under `addons/` into your Godot project.
+4. **Non-browser builds only:** install the [webrtc-native](https://github.com/godotengine/webrtc-native) plugin.
+5. That's it - you're ready to go!
 
 ---
 
